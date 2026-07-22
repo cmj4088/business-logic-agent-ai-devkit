@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== 全局深色主题基底 ===== */
+:root {
+  font-family: 'SF Pro Display', 'JetBrains Mono', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #111111;
+  color: #e2e8f0;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ===== 自定义滚动条 ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00d4ff 0%, #a855f7 100%);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00d4ff 0%, #a855f7 100%);
+  opacity: 0.8;
+}
+
+/* ===== 玻璃拟态卡片 ===== */
+.glass-card {
+  background: rgba(36, 36, 36, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(51, 51, 51, 0.8);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.glass-card-hover {
+  transition: all 0.3s ease;
+}
+
+.glass-card-hover:hover {
+  border-color: rgba(0, 212, 255, 0.4);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.15), 0 8px 32px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+/* ===== 霓虹辉光文字 ===== */
+.neon-text-blue {
+  color: #00d4ff;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5), 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.neon-text-purple {
+  color: #a855f7;
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.5), 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+.neon-text-green {
+  color: #00ff9d;
+  text-shadow: 0 0 10px rgba(0, 255, 157, 0.5), 0 0 20px rgba(0, 255, 157, 0.3);
+}
+
+/* ===== 霓虹按钮辉光 ===== */
+.neon-btn-blue {
+  background: linear-gradient(135deg, #00d4ff 0%, #0ea5e9 100%);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.neon-btn-blue:hover {
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.6), 0 0 60px rgba(0, 212, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.neon-btn-purple {
+  background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  transition: all 0.3s ease;
+}
+
+.neon-btn-purple:hover {
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.6), 0 0 60px rgba(168, 85, 247, 0.2);
+  transform: translateY(-1px);
+}
+
+.neon-btn-green {
+  background: linear-gradient(135deg, #00ff9d 0%, #10b981 100%);
+  box-shadow: 0 0 20px rgba(0, 255, 157, 0.4);
+  transition: all 0.3s ease;
+}
+
+.neon-btn-green:hover {
+  box-shadow: 0 0 30px rgba(0, 255, 157, 0.6), 0 0 60px rgba(0, 255, 157, 0.2);
+  transform: translateY(-1px);
+}
+
+/* ===== 渐变文字 ===== */
+.gradient-text {
+  background: linear-gradient(135deg, #00d4ff 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ===== 3D 卡片透视效果 ===== */
+.perspective-card {
+  perspective: 1000px;
+}
+
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.card-3d:hover {
+  transform: rotateX(2deg) rotateY(-2deg) translateZ(10px);
+}
+
+/* ===== 动态渐变背景 ===== */
+.gradient-mesh {
+  background: linear-gradient(125deg, #111111 0%, #1a1a1a 30%, #242424 60%, #1a1a1a 100%);
+  background-size: 200% 200%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+/* ===== 粒子背景容器 ===== */
+.particles-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ===== Ant Design 深色主题覆盖 ===== */
+.ant-spin .ant-spin-dot-item {
+  background-color: #00d4ff !important;
+}
+
+.ant-progress .ant-progress-bg {
+  background: linear-gradient(90deg, #00d4ff 0%, #a855f7 100%) !important;
+}
+
+/* ===== 网格背景纹理 ===== */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}

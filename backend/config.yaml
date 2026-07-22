@@ -1,0 +1,53 @@
+# Business Logic Agent 配置文件
+# 注意：生产环境请使用环境变量覆盖以下配置，不要提交到版本控制
+
+app_name: "Business Logic Agent"
+app_version: "0.1.0"
+debug: true
+
+# 数据库
+database_path: "data/ipd_agent.db"
+
+# JWT 密钥（生产环境请使用环境变量 JWT_SECRET 覆盖）
+jwt_secret: "ipd-agent-studio-jwt-secret-key-2026"
+jwt_algorithm: "HS256"
+session_token_expire_minutes: 15
+refresh_token_expire_days: 30
+
+# 加密密钥（生产环境请使用环境变量 FERNET_KEY 覆盖）
+fernet_key: "4IrjwMT6Qr6-Pe2-M-fEBhiq1vdII3xWh6sg2eJItn0="
+
+# 日志
+log_level: "INFO"
+log_file: "logs/app.log"
+log_max_bytes: 10485760
+log_backup_count: 5
+
+# LLM
+llm_default: "ollama"
+llm_timeout: 300
+llm_max_retries: 3
+llm_circuit_breaker_max_failures: 5
+llm_circuit_breaker_retry_minutes: 10
+llm_format_retry_max: 2
+
+# Ollama
+ollama_base_url: "http://localhost:11434"
+ollama_default_model: "qwen2.5"
+
+# 工作流
+max_rollback_count: 2
+stage_timeout_hours: 72
+
+# 用量限制
+default_daily_token_limit: 100000
+default_monthly_token_limit: 2000000
+budget_warning_threshold: 0.8
+
+# 附件
+max_attachment_size_mb: 50
+
+# WebSocket
+ws_heartbeat_interval: 30
+ws_max_reconnect_attempts: 5
+ws_max_connections: 10
