@@ -67,10 +67,11 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS
+    # CORS — 从配置读取允许源，支持逗号分隔多个源
+    cors_origins = settings.cors_origins.split(",") if settings.cors_origins else ["*"]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://localhost:5174", "app://."],
+        allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

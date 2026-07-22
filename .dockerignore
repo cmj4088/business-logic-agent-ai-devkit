@@ -1,0 +1,53 @@
+# Business Logic Agent — .dockerignore
+# 构建时排除不必要的文件以减小镜像体积
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+.vite/
+*.tsbuildinfo
+
+# Electron
+electron/
+out/
+
+# 开发/文档目录（构建镜像时不需要）
+CLAUDE.md
+MVPtext/
+modification_log/
+basic_code_information_archive/
+docx/
+demo/
+skill/
+.claude/
+.trae/
+personal-rules.md
+test_avatar.py
+test_avatar_playwright.py
+*.md
+LICENSE
+
+# 日志
+logs/
+*.log
+
+# 数据库（在容器内生成）
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# 环境文件
+.env
+.env.*

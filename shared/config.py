@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     app_name: str = "Business Logic Agent"
     app_version: str = "0.1.0"
     debug: bool = False
+    cors_origins: str = "http://localhost:5173,http://localhost:5174,app://."
 
     # 数据库
     database_path: str = "data/ipd_agent.db"
