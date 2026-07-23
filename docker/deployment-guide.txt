@@ -1,0 +1,284 @@
+================================================================================
+  Business Logic Agent (BLA) — Docker 部署完整指南
+  大赛提交用 — 可直接在服务器上部署运行
+================================================================================
+
+本指南将指导你在任何一台联网的电脑上完整部署 BLA 系统。
+整个过程约 10-20 分钟，取决于网络速度。
+
+===============================================================================
+【第一步】安装 Docker
+===============================================================================
+
+--- Windows ---
+
+1. 下载 Docker Desktop:
+   网址: https://www.docker.com/products/docker-desktop/
+   或百度网盘链接: https://pan.baidu.com/s/1xxx（找大赛组委会要离线包）
+
+2. 双击安装，一路 Next
+3. 安装完成后重启电脑
+4. 启动 Docker Desktop（桌面图标）
+5. 等待底部状态栏显示 "Engine running"
+
+--- Linux (Ubuntu/Debian) ---
+
+# 一键安装:
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+# 退出终端重进，或执行: newgrp docker
+
+# 验证安装:
+docker --version
+docker compose version
+
+
+===============================================================================
+【第二步】获取项目代码
+===============================================================================
+
+方式一：从 GitHub 克隆（推荐）
+
+   打开终端（Windows 用 PowerShell 或 CMD），执行:
+
+   git clone https://github.com/cmj4088/business-logic-agent.git
+   cd business-logic-agent
+
+方式二：U盘复制
+
+   如果服务器不能联网，将本项目文件夹完整复制到服务器上。
+
+
+===============================================================================
+【第三步】配置环境变量
+===============================================================================
+
+# 拷贝环境变量模板:
+cp docker/.env.example .env
+
+# 用记事本/编辑器打开 .env 文件，修改以下配置:
+
+--- 必须修改（安全配置）---
+
+   生成随机密钥（Windows 用 PowerShell 执行）:
+   ```
+   # 生成 JWT_SECRET
+   -join ((48..57)+(65..90)+(97..122) | Get-Random -Count 32 | % {[char]$_})
+
+   # 生成 FERNET_KEY
+   [Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+   ```
+
+   生成随机密钥（Linux/Mac 执行）:
+   ```
+   JWT_SECRET=$(openssl rand -hex 32)
+   FERNET_KEY=$(openssl rand -base64 32)
+   ```
+
+   将生成的字符串填入 .env 文件:
+   ```
+   JWT_SECRET=这里粘贴生成的密钥
+   FERNET_KEY=这里粘贴生成的base64密钥
+   ```
+
+--- 按需修改 ---
+
+   # 前端端口（默认 80，如果被占用可改为 8080）
+   FRONTEND_PORT=80
+
+   # 后端端口
+   BACKEND_PORT=8000
+
+   # Ollama 地址（如果 Ollama 在其他服务器，修改这里）
+   OLLAMA_BASE_URL=http://host.docker.internal:11434
+
+
+===============================================================================
+【第四步】安装 Ollama（可选，用于本地 LLM）
+===============================================================================
+
+BLA 默认使用 Ollama 进行 AI 推理。如果服务器没有 Ollama，有两种选择:
+
+方案 A：宿主机安装（推荐）
+
+   # Linux 一键安装
+   curl -fsSL https://ollama.ai/install.sh | sh
+
+   # 下载模型（约 4GB）
+   ollama pull qwen2.5
+
+   # Windows: 从 https://ollama.com/download 下载安装
+   # 安装后在终端执行: ollama pull qwen2.5
+
+方案 B：Docker 安装（跟 BLA 一起跑）
+
+   编辑 docker-compose.yml，在 services: 下面添加:
+
+   ```
+   services:
+     ollama:                                    # ← 新增
+       image: ollama/ollama:latest              # ← 新增
+       container_name: bla-ollama               # ← 新增
+       restart: unless-stopped                  # ← 新增
+       volumes:                                 # ← 新增
+         - ollama_data:/root/.ollama            # ← 新增
+       ports:                                   # ← 新增
+         - "11434:11434"                        # ← 新增
+   ```
+
+   然后在 .env 中改:
+   ```
+   OLLAMA_BASE_URL=http://ollama:11434
+   ```
+
+   启动后进容器下载模型:
+   ```
+   docker exec bla-ollama ollama pull qwen2.5
+   ```
+
+   最后在 docker-compose.yml 的 volumes: 下面添加:
+   ```
+   volumes:
+     ollama_data:          # ← 新增
+   ```
+
+方案 C：使用云端 LLM（不需要安装 Ollama）
+
+   如果服务器没有 GPU，可以用云端大模型:
+   - 修改 .env 中的 LLM_DEFAULT=openai 或 LLM_DEFAULT=anthropic
+   - 在 BLA 管理后台的 "Agent 配置" 页面填写 API Key
+
+-- 重要: 验证 Ollama 是否正常运行 --
+
+   curl http://localhost:11434/api/tags
+   # 返回 {"models":[...]} 表示正常
+
+
+===============================================================================
+【第五步】启动服务
+===============================================================================
+
+# 在项目根目录执行:
+
+docker compose up -d
+
+# 等待第一次构建完成（首次会下载镜像并编译代码，约 3-5 分钟）
+
+# 查看启动日志:
+docker compose logs -f
+
+# 看到类似以下输出即表示启动成功:
+#   bla-backend   | INFO:     Application startup complete.
+#   bla-backend   | Uvicorn running on http://0.0.0.0:8000
+#   bla-frontend  | /docker-entrypoint.sh: Configuration complete.
+
+# 按 Ctrl+C 退出日志查看
+
+
+===============================================================================
+【第六步】验证部署
+===============================================================================
+
+1. 打开浏览器，访问 http://localhost（或 http://服务器IP）
+
+   应该能看到 BLA 的登录页面，
+   说明前端 Nginx 和 后端 API 都正常工作了。
+
+2. 注册账号:
+   - 点击 "注册"
+   - 填写用户名、邮箱、密码
+   - 注册成功后自动登录
+
+3. 创建测试项目:
+   - 进入 Dashboard
+   - 点击 "快速创建项目"
+   - 填写 5 个必填项
+   - 提交
+
+4. 如果以上步骤都成功，部署完成 ✓
+
+
+===============================================================================
+【第七步】常用运维命令
+===============================================================================
+
+--- 查看服务状态 ---
+docker compose ps
+
+--- 查看日志 ---
+docker compose logs -f          # 所有服务的日志
+docker compose logs -f backend  # 仅后端日志
+docker compose logs -f frontend # 仅前端日志
+
+--- 重启 ---
+docker compose restart backend  # 仅重启后端
+docker compose restart          # 重启所有
+
+--- 停止 ---
+docker compose down             # 停止并删除容器
+docker compose down -v          # 停止并删除容器+数据（⚠️ 会清空数据库）
+
+--- 更新代码后重新部署 ---
+git pull                        # 拉取最新代码
+docker compose up -d --build    # 重建镜像并启动
+
+
+===============================================================================
+【常见问题排查】
+===============================================================================
+
+问题 1: 端口被占用
+   错误信息: "port is already allocated"
+   解决: 修改 .env 中的 FRONTEND_PORT 和 BACKEND_PORT
+   （比如改为 FRONTEND_PORT=8080, BACKEND_PORT=8001）
+
+问题 2: 后端连不上 Ollama
+   症状: 项目页面报 "LLM 连接超时" 或 "Ollama 服务不可用"
+   排查:
+     docker exec bla-backend curl http://host.docker.internal:11434/api/tags
+   解决:
+     如果 Ollama 在宿主机，确保 OLLAMA_BASE_URL 正确
+     如果 Ollama 在另一台服务器，填实际 IP
+
+问题 3: 数据库问题
+   如果想重置数据库:
+     docker compose down -v    # 删除数据卷
+     docker compose up -d      # 重新创建
+
+问题 4: CORS 跨域错误
+   浏览器控制台报 "CORS" 或 "跨域"
+   解决: 修改 .env 中的 CORS_ORIGINS，改为实际访问地址
+   （如 http://服务器IP:端口）
+
+问题 5: 构建失败 / 依赖安装失败
+   通常是网络问题，可以设置 Docker 镜像加速:
+   编辑 /etc/docker/daemon.json（Linux）或 Docker Desktop 设置:
+   {
+     "registry-mirrors": ["https://docker.mirrors.ustc.edu.cn"]
+   }
+
+
+===============================================================================
+【附录】文件清单
+===============================================================================
+
+部署所需的全部文件（已包含在仓库中）:
+
+项目根目录/
+├── docker-compose.yml       ← Docker 编排（核心）
+├── .env                     ← 环境变量（由你创建）
+├── .dockerignore            ← 构建排除配置
+├── docker/
+│   ├── Dockerfile.backend   ← 后端镜像构建
+│   ├── Dockerfile.frontend  ← 前端镜像构建
+│   ├── nginx.conf           ← Nginx 配置
+│   ├── .env.example         ← 环境变量模板
+│   └── README.md            ← 部署说明
+├── backend/                 ← 后端代码
+├── frontend/                ← 前端代码
+└── shared/                  ← 共享代码
+
+===============================================================================
+                           —— 部署完成 ——
+                   如有问题请联系大赛技术支持
+===============================================================================
