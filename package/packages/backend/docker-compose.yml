@@ -1,0 +1,76 @@
+version: "3.8"
+
+# =============================================================================
+# Business Logic Agent — Docker Compose 部署
+# 用法:
+#   docker compose up -d                     # 启动所有服务
+#   docker compose up -d --build             # 重新构建镜像后启动
+#   docker compose logs -f                   # 查看日志
+#   docker compose down                      # 停止并删除容器
+#   docker compose down -v                   # 停止并删除容器+数据卷
+# =============================================================================
+
+services:
+  # ---- 后端服务 ----
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: bla-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      # SQLite 数据持久化
+      - bla_data:/app/backend/data
+      # 日志持久化
+      - bla_logs:/app/backend/logs
+    environment:
+      # 应用配置
+      - APP_NAME=${APP_NAME:-Business Logic Agent}
+      - APP_VERSION=${APP_VERSION:-0.1.0}
+      - DEBUG=${DEBUG:-false}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173,http://localhost:5174,app://.}
+      # 数据库
+      - DATABASE_PATH=${DATABASE_PATH:-data/ipd_agent.db}
+      # 安全（生产环境必须修改）
+      - JWT_SECRET=${JWT_SECRET:-}
+      - FERNET_KEY=${FERNET_KEY:-}
+      - JWT_ALGORITHM=HS256
+      # LLM 配置
+      - LLM_DEFAULT=${LLM_DEFAULT:-ollama}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - OLLAMA_DEFAULT_MODEL=${OLLAMA_DEFAULT_MODEL:-qwen2.5}
+      # 日志
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    networks:
+      - bla-network
+    # 使容器内可通过 host.docker.internal 访问宿主机（Ollama/其他服务）
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ---- 前端服务（Nginx + 静态文件）----
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
+    container_name: bla-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - bla-network
+
+networks:
+  bla-network:
+    driver: bridge
+
+volumes:
+  bla_data:
+    driver: local
+  bla_logs:
+    driver: local

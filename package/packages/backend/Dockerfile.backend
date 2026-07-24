@@ -1,0 +1,42 @@
+# Business Logic Agent — 后端 Docker 镜像
+# Python 3.11 + FastAPI + Uvicorn
+
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# 安装编译依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装 Python 依赖
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# ---------- 运行时镜像 ----------
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 从 builder 复制已安装的包
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+# 创建数据目录
+RUN mkdir -p /app/data /app/logs
+
+# 复制后端代码
+COPY backend/ /app/backend/
+COPY shared/ /app/shared/
+
+# 复制配置文件
+COPY backend/config.yaml /app/backend/config.yaml
+
+WORKDIR /app/backend
+
+EXPOSE 8000
+
+# 默认启动命令
+CMD ["uvicorn", "m0_infrastructure.main:app", "--host", "0.0.0.0", "--port", "8000"]

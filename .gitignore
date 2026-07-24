@@ -47,6 +47,17 @@ logs/
 # Generated output
 output/
 
+# Build artifacts
+BLA_Judge_Client_Setup.exe
+electron/app-config.json
+electron/dist-electron/
+
+# Tunnel tools
+.tools/
+
+# Temp files
+*.bom
+
 # Temp files
 *.timestamp-*.mjs
 *.timestamp-*.mts
