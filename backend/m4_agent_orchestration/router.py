@@ -1,12 +1,20 @@
-"""Agent 编排路由 — M4。"""
-from fastapi import APIRouter, Depends
+"""Agent 编排路由 — M4。
+
+包含 Agent 编排、远程 Agent 注册与发现端点。
+"""
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from m0_infrastructure.database import get_db
 from m1_auth_security.middleware import get_current_user
-from .models import OrchestrateRequest, AgentConfigRequest, ModelTestRequest, SkillExecuteRequest
+from .models import (
+    OrchestrateRequest, AgentConfigRequest,
+    ModelTestRequest, SkillExecuteRequest,
+)
 from .orchestrator import Orchestrator
 from .llm_router import LLMRouter
 from m7_plugin_system.tool_bridge import SkillToolBridge
+from standalone_agent.registry import AgentRegistryClient
+from standalone_agent.manifest import AgentRegisterRequest
 
 router = APIRouter(prefix="/api/agents", tags=["Agent 编排"])
 
@@ -220,6 +228,94 @@ async def list_skills(
                 for t in tools
             ],
         },
+        "error": None,
+        "meta": {"request_id": ""},
+    }
+
+
+# ════════════════════════════════════════════════════════════
+# 独立 Agent 注册与发现（Standalone Agent）
+# ════════════════════════════════════════════════════════════
+
+
+@router.get("/registry")
+async def list_registered_agents(
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """列出所有已注册的 Agent（本地 + 远程）。"""
+    registry = AgentRegistryClient(db=db)
+    agents = await registry.list_agents(include_offline=True)
+    return {
+        "data": {"agents": [a.model_dump() for a in agents]},
+        "error": None,
+        "meta": {"request_id": ""},
+    }
+
+
+@router.post("/registry")
+async def register_agent(
+    request: AgentRegisterRequest,
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """注册一个远程独立 Agent。
+
+    通过 URL 发现并注册远程 Agent 服务。
+    注册后引擎将优先使用远程 Agent 而非本地 LLM 调用。
+
+    请求体:
+        role: Agent 角色（product_manager/rd/qa/marketing/manufacturing/finance）
+        url: Agent 服务 URL（如 http://192.168.1.100:8001）
+        name: 显示名称（可选）
+        api_key: API Key（可选）
+
+    流程:
+        1. 向 URL 发送 GET /manifest 获取 Agent 清单
+        2. 验证清单与角色匹配
+        3. 保存注册信息
+        4. 后续编排将路由到该远程 Agent
+    """
+    registry = AgentRegistryClient(db=db)
+    try:
+        response = await registry.register_remote(request)
+        return {
+            "data": response.model_dump(),
+            "error": None,
+            "meta": {"request_id": ""},
+        }
+    except ConnectionError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"注册失败: {str(e)}")
+
+
+@router.delete("/registry/{role}")
+async def unregister_agent(
+    role: str,
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """取消注册一个远程 Agent。"""
+    registry = AgentRegistryClient(db=db)
+    success = await registry.unregister(role)
+    return {
+        "data": {"unregistered": success, "role": role},
+        "error": None,
+        "meta": {"request_id": ""},
+    }
+
+
+@router.post("/registry/health")
+async def health_check_agents(
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """对所有注册的远程 Agent 执行健康检查。"""
+    registry = AgentRegistryClient(db=db)
+    results = await registry.health_check_all()
+    return {
+        "data": {"health": results},
         "error": None,
         "meta": {"request_id": ""},
     }

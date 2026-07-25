@@ -1,6 +1,7 @@
 """编排器 — M4 Agent 编排。
 
 实现 3 种 Agent 协作模式：parallel / sequential / debate。
+支持本地 LLM 调用和远程独立 Agent（通过 URL 注册）。
 """
 import uuid
 import asyncio
@@ -16,6 +17,7 @@ from .output_parser import extract_json_with_retry
 from .language_detector import check_language
 from .reasoning_summarizer import generate_reasoning_summary
 from m7_plugin_system.tool_bridge import SkillToolBridge
+from standalone_agent.registry import AgentRegistryClient
 
 
 def generate_round_id() -> str:
@@ -25,11 +27,12 @@ def generate_round_id() -> str:
 class Orchestrator:
     """Agent 编排器。"""
 
-    def __init__(self, db: AsyncSession, user_id: str | None = None):
+    def __init__(self, db: AsyncSession, user_id: str | None = None, agent_registry: AgentRegistryClient | None = None):
         self.db = db
         self.user_id = user_id
         self.router = LLMRouter(db=db, user_id=user_id)
         self.renderer = PromptRenderer()
+        self.agent_registry = agent_registry or AgentRegistryClient(db=db)
 
     async def orchestrate(
         self,
@@ -149,13 +152,16 @@ class Orchestrator:
         return all_outputs
 
     async def _invoke_agent(self, agent_role: str, context: dict) -> dict:
-        """调用单个 Agent。"""
+        """调用单个 Agent。
+
+        优先调用远程注册的独立 Agent（如果已注册），
+        否则使用本地 LLM 调用。
+        """
         # 渲染 system prompt
         system_prompt = self.renderer.render(agent_role, context)
-        # 注入角色标记，供 mock provider 精确识别（真实 LLM 会忽略此注释）
         system_prompt = f"<!-- AGENT_ROLE: {agent_role} -->\n{system_prompt}"
 
-        # 注入 Skill 工具列表，使 Agent 知道可调用的技能
+        # 注入 Skill 工具列表
         skill_tools = self._get_skill_tools(context)
         if skill_tools:
             system_prompt += f"\n\n## 可用技能工具\n\n你可以通过以下技能工具生成产出物。在回复中说明需要调用的工具名称和参数即可。\n\n"
@@ -164,12 +170,31 @@ class Orchestrator:
             system_prompt += f"\n调用格式：`[调用工具: tool_name, 参数1: 值1, 参数2: 值2]`\n"
 
         user_message = context.get("user_input", "")
-        # 将活动标识加入消息，供 mock 识别活动类型
         activity_key = context.get("activity_key", "")
         if activity_key:
             user_message = f"[活动: {activity_key}]\n{user_message}"
 
-        # 调用 LLM（最多重试 3 次）
+        # ── 优先尝试远程 Agent ──
+        is_remote = await self.agent_registry.is_remote_agent(agent_role)
+        if is_remote:
+            remote_result = await self.agent_registry.call_remote(
+                role=agent_role,
+                system_prompt=system_prompt,
+                user_message=user_message,
+                context=context,
+            )
+            if remote_result and remote_result.content:
+                return {
+                    "role": agent_role,
+                    "role_name": ROLE_NAMES.get(agent_role, agent_role),
+                    "content": remote_result.content,
+                    "model": remote_result.model,
+                    "provider": remote_result.provider or "remote",
+                    "tokens": remote_result.tokens,
+                    "source": "remote",
+                }
+
+        # ── 本地 LLM 调用 ──
         max_attempts = 3
         for attempt in range(max_attempts):
             try:
@@ -182,7 +207,6 @@ class Orchestrator:
 
                 content = result["content"]
 
-                # 语言检测
                 is_chinese, reason = check_language(content)
                 if not is_chinese and attempt < max_attempts - 1:
                     user_message = f"请用中文回答。\n{user_message}"
@@ -195,6 +219,7 @@ class Orchestrator:
                     "model": result["model"],
                     "provider": result["provider"],
                     "tokens": result["tokens"],
+                    "source": "local",
                 }
             except Exception as e:
                 if attempt == max_attempts - 1:

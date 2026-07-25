@@ -1,0 +1,18 @@
+{
+  "id": "product_manager",
+  "name": "产品经理小王",
+  "role": "product_manager",
+  "version": "1.0.0",
+  "description": "负责需求分析、市场调研、产品定义、MRD/PRD撰写，参与DCP门禁决策",
+  "author": { "name": "BLA Team" },
+  "capabilities": {
+    "applicable_stages": ["concept", "plan", "launch"],
+    "applicable_activities": ["market_research", "mrd_writing", "prd_writing", "dcp_review"],
+    "description": "需求分析、市场调研、产品定义、MRD/PRD 撰写",
+    "output_types": ["mrd", "prd", "competitor_analysis", "roadmap"],
+    "max_context_length": 128000
+  },
+  "supported_models": ["ollama", "deepseek", "anthropic", "openai"],
+  "default_model": "ollama",
+  "min_engine_version": "1.0.0"
+}

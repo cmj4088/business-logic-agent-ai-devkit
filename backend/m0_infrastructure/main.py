@@ -29,6 +29,9 @@ async def lifespan(app: FastAPI):
     # 注册内置 Skill 到 SkillRegistry
     _register_builtin_skills()
 
+    # 注册内置 IPD Agent 到 AgentRegistry
+    await _register_builtin_agents(settings)
+
     yield
     # shutdown
     await close_db()
@@ -58,6 +61,45 @@ def _register_builtin_skills() -> None:
         except ValueError:
             # 已注册的 Skill 跳过（如热重载场景）
             pass
+
+
+async def _register_builtin_agents(settings) -> None:
+    """注册 6 个内置 IPD Agent 到 AgentRegistry。
+
+    从 JSON 文件加载 Agent 清单并完成注册。
+    同时从数据库加载之前注册的远程 Agent 信息。
+    """
+    import json
+    import os
+    from standalone_agent.registry import AgentRegistryClient
+    from standalone_agent.manifest import AgentManifest
+
+    agents_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "agents")
+    registry = AgentRegistryClient(db=None)
+
+    # 从 agents/ 目录加载所有 manifest JSON 文件
+    if os.path.isdir(agents_dir):
+        for filename in sorted(os.listdir(agents_dir)):
+            if filename.endswith(".json"):
+                filepath = os.path.join(agents_dir, filename)
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    manifest = AgentManifest(**data)
+                    await registry.register_local(manifest)
+                except Exception as e:
+                    print(f"[startup] 加载 Agent manifest {filename} 失败: {e}")
+
+    # 从数据库加载远程 Agent 注册信息（init_db 已创建引擎）
+    try:
+        from m0_infrastructure.database import _engine
+        if _engine:
+            from sqlalchemy.ext.asyncio import AsyncSession
+            async with AsyncSession(_engine) as startup_db:
+                registry.db = startup_db
+                await registry.load_from_db()
+    except Exception as e:
+        print(f"[startup] 加载远程 Agent 注册信息失败: {e}")
 
 
 def create_app() -> FastAPI:

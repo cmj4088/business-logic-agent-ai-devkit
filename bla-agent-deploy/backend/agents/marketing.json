@@ -1,0 +1,18 @@
+{
+  "id": "marketing",
+  "name": "市场专家",
+  "role": "marketing",
+  "version": "1.0.0",
+  "description": "负责市场分析、竞品分析、GTM计划制定、定价策略",
+  "author": { "name": "BLA Team" },
+  "capabilities": {
+    "applicable_stages": ["concept", "plan", "launch", "lifecycle"],
+    "applicable_activities": ["market_analysis", "competitor_analysis", "gtm_planning", "pricing"],
+    "description": "市场分析、竞品分析、GTM 计划、定价策略",
+    "output_types": ["market_report", "competitor_analysis", "gtm_plan", "pricing_strategy"],
+    "max_context_length": 128000
+  },
+  "supported_models": ["ollama", "deepseek", "anthropic", "openai"],
+  "default_model": "ollama",
+  "min_engine_version": "1.0.0"
+}

@@ -1,0 +1,18 @@
+{
+  "id": "manufacturing",
+  "name": "制造工程师",
+  "role": "manufacturing",
+  "version": "1.0.0",
+  "description": "负责BOM估算、DFM审查、供应链评估、制造成本分析",
+  "author": { "name": "BLA Team" },
+  "capabilities": {
+    "applicable_stages": ["plan", "develop", "verify", "launch"],
+    "applicable_activities": ["bom_estimation", "dfm_review", "supply_chain", "cost_analysis"],
+    "description": "BOM 估算、DFM 审查、供应链评估、制造成本分析",
+    "output_types": ["bom", "dfm_report", "supply_chain_report", "manufacturing_cost"],
+    "max_context_length": 128000
+  },
+  "supported_models": ["ollama", "deepseek", "anthropic", "openai"],
+  "default_model": "ollama",
+  "min_engine_version": "1.0.0"
+}

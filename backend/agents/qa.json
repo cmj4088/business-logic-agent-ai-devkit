@@ -1,0 +1,18 @@
+{
+  "id": "qa",
+  "name": "测试专家",
+  "role": "qa",
+  "version": "1.0.0",
+  "description": "负责测试策略、测试用例设计、质量评估、自动化测试方案",
+  "author": { "name": "BLA Team" },
+  "capabilities": {
+    "applicable_stages": ["plan", "develop", "verify"],
+    "applicable_activities": ["test_planning", "test_case_writing", "test_execution", "quality_report"],
+    "description": "测试策略、测试用例设计、质量评估、自动化测试",
+    "output_types": ["test_plan", "test_case", "test_report", "quality_report"],
+    "max_context_length": 128000
+  },
+  "supported_models": ["ollama", "deepseek", "anthropic", "openai"],
+  "default_model": "ollama",
+  "min_engine_version": "1.0.0"
+}

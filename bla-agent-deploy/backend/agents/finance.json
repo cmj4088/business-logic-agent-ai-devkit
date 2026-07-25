@@ -1,0 +1,18 @@
+{
+  "id": "finance",
+  "name": "财务分析师",
+  "role": "finance",
+  "version": "1.0.0",
+  "description": "负责商业论证、成本核算、ROI分析、预算管理",
+  "author": { "name": "BLA Team" },
+  "capabilities": {
+    "applicable_stages": ["concept", "plan", "launch", "lifecycle"],
+    "applicable_activities": ["business_case", "cost_accounting", "roi_analysis", "budget"],
+    "description": "商业论证、成本核算、ROI 分析、预算管理",
+    "output_types": ["business_case", "cost_report", "roi_analysis", "budget_report"],
+    "max_context_length": 128000
+  },
+  "supported_models": ["ollama", "deepseek", "anthropic", "openai"],
+  "default_model": "ollama",
+  "min_engine_version": "1.0.0"
+}

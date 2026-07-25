@@ -6,6 +6,60 @@
 
 ---
 
+## [2026-07-25 22:30] 服务器部署独立 Agent + 创建设置配置说明文档
+- **需求**: 将独立智能体系统部署到 121.199.31.157 服务器，记录所有配置避免下次重搞
+- **提示词**: "把这些东西记录一下，别下一次我还要重新搞这么多配置。这个就记录在项目里边，然后重新安排个文件夹，叫做服务器配置"
+- **改动文件**:
+  - `服务器配置/服务器部署记录.md`（新建）
+  - `backend/m0_infrastructure/main.py`（修改：添加 `_register_builtin_agents` 启动时注册）
+  - `backend/m4_agent_orchestration/router.py`（修改：添加 registry 注册/列表/删除/健康检查端点）
+- **改动说明**:
+  - 在项目根目录新建 `服务器配置/` 文件夹，记录完整部署信息
+  - 记录了服务器 IP、项目路径、所有服务端口、启动/停止命令、Agent URL 列表
+  - 记录了登录/注册 token、注册远程 Agent、查看日志、防火墙端口等常见操作
+  - 服务器后端通过 `PYTHONPATH=/root/bla/package/src` 解决 shared 模块导入问题
+  - 6 个 Agent 注册信息持久化到 agent_registry 数据库表，重启后不丢失
+
+---
+
+## [2026-07-25 21:30] 新增独立智能体系统（Standalone Agent）
+- **需求**: 创建可以独立部署、通过 URL 拉入项目的 IPD Agent 智能体系统
+- **提示词**: "他要我搞一个智能体，就是一个独立的智能体，可以拉入到这个项目里边的。这里边会有一个智能体URL。现在你根据我原有的几个内置角色进行智能体生成"
+- **改动文件**:
+  - `backend/standalone_agent/__init__.py`（新建）
+  - `backend/standalone_agent/manifest.py`（新建）
+  - `backend/standalone_agent/server.py`（新建）
+  - `backend/standalone_agent/registry.py`（新建）
+  - `backend/standalone_agent/runner.py`（新建）
+  - `backend/standalone_agent/start_all_agents.sh`（新建）
+  - `backend/agents/product_manager.json`（新建）
+  - `backend/agents/rd.json`（新建）
+  - `backend/agents/qa.json`（新建）
+  - `backend/agents/marketing.json`（新建）
+  - `backend/agents/manufacturing.json`（新建）
+  - `backend/agents/finance.json`（新建）
+  - `backend/m0_infrastructure/main.py`（修改）
+  - `backend/m0_infrastructure/migrations/v008_agent_registry.sql`（新建）
+  - `backend/m4_agent_orchestration/orchestrator.py`（修改）
+  - `backend/m4_agent_orchestration/router.py`（修改）
+  - `docx/standalone-agent-design.md`（新建）
+  - `basic_code_information_archive/backend/standalone_agent.md`（新建）
+- **改动说明**:
+  - 新建 standalone_agent 包：含 manifest（清单模型）、server（FastAPI 服务）、registry（注册发现）、runner（CLI 启动器）
+  - 创建 6 个 Agent 清单 JSON 文件，对应 6 个内置 IPD 角色
+  - 更新编排器：优先调用远程 Agent（如已注册），失败后降级到本地 LLM
+  - 更新路由：新增 Agent 注册/发现 API 端点（POST/GET/DELETE /api/agents/registry）
+  - 更新启动逻辑：启动时自动加载 agents/*.json 注册内置 Agent
+  - 数据库迁移 v008：agent_registry 表持久化远程 Agent 注册信息
+
+---
+
+##### year_2026
+#### month_7
+### day_25
+
+---
+
 ## [2026-07-25 13:00] 修复 Electron 客户端闪退问题（"没法显示"）
 - **需求**: 安装 BLA 客户端后点击快捷方式无反应/闪退，重新安装提示"关闭不了"
 - **提示词**: 现在是这个情况，我下载这个东西的期间会有卡顿，然后呢，下载完以后点击快捷方式会发现没有任何弹窗，弹出来就相当于是闪退或者是这个脚本根本没有启动

@@ -93,6 +93,7 @@ Business Logic Agent (BLA) 是一款基于 **AI Agent 的商业逻辑工作流�
 | M8 实时通信 | WebSocket 5 通道管理 |
 | M9 用量追踪 | Token 消耗 + 成本统计 |
 | M10 异常恢复 | 4 种异常恢复路径 |
+| SA 独立智能体 | Agent 独立部署、URL 注册发现、远程推理调用 |
 
 详见 `CLAUDE.md` §四。
 
@@ -186,3 +187,31 @@ Authorization: Bearer <session_token>
 | `docx/ipd-workflow-template.md` | IPD 工作流模板 |
 | `docx/plugin-manifest-schema.md` | 插件清单 Schema |
 | `docx/requirements_spec.md` | 需求规格说明书 |
+| `docx/standalone-agent-design.md` | 独立智能体系统设计 |
+
+### 7.1 新增：独立智能体系统（Standalone Agent）
+
+详见 `docx/standalone-agent-design.md`。
+
+**核心能力**：
+- 6 个 IPD Agent 角色可作为独立的 FastAPI 微服务运行
+- 每个 Agent 通过 HTTP URL 注册到主引擎
+- 支持运行时注册/注销，热插拔
+- 编排器优先调用远程 Agent，失败后自动降级到本地 LLM
+
+**启动方式**：
+```bash
+# 启动单个 Agent
+python -m standalone_agent.runner --role product_manager --port 8001
+
+# 注册到主引擎
+curl -X POST http://localhost:8000/api/agents/registry \\
+  -H "Authorization: Bearer <token>" \\
+  -d '{"role": "product_manager", "url": "http://localhost:8001"}'
+```
+
+**新增 API 端点**：
+- `POST /api/agents/registry` — 注册远程 Agent
+- `GET /api/agents/registry` — 列出所有 Agent
+- `DELETE /api/agents/registry/{role}` — 取消注册
+- `POST /api/agents/registry/health` — 批量健康检查
