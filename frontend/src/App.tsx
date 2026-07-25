@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, theme } from 'antd';
 import { AuthProvider, ProtectedRoute } from '@/m11_auth_pages';
 import { LoginPage } from '@/m11_auth_pages';
@@ -32,7 +32,7 @@ const darkTheme = {
 
 function App() {
   return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <HashRouter>
       <ConfigProvider theme={darkTheme}>
         <AuthProvider>
           <div className="flex min-h-screen flex-col">
@@ -64,7 +64,7 @@ function App() {
           </div>
         </AuthProvider>
       </ConfigProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

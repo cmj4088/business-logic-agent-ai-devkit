@@ -1,11 +1,36 @@
 /** Business Logic Agent API 客户端
  *
  * 基于 axios 的 HTTP 客户端，处理请求/响应拦截、错误处理等。
+ * 支持三种模式：
+ * 1. Vite 开发模式 — 使用 VITE_API_BASE_URL 环境变量或同源
+ * 2. Electron 客户端模式 — 使用 window.electronAPI.getServerUrl() 获取远程地址
+ * 3. 正常模式 — 同源请求
  */
 
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 import { API_BASE_URL } from './constants';
 import type { ApiResponse } from './types';
+
+/** 缓存 Electron 客户端模式下的服务器地址 */
+let electronServerUrl: string | undefined;
+
+/** 获取 Electron 客户端模式下的服务器地址（仅首次调用走 IPC） */
+async function getElectronServerUrl(): Promise<string> {
+  if (electronServerUrl !== undefined) return electronServerUrl;
+  try {
+    const api = (window as unknown as Record<string, unknown>).electronAPI as
+      | { getServerUrl?: () => Promise<string> }
+      | undefined;
+    if (api?.getServerUrl) {
+      electronServerUrl = (await api.getServerUrl()) || '';
+    } else {
+      electronServerUrl = '';
+    }
+  } catch {
+    electronServerUrl = '';
+  }
+  return electronServerUrl;
+}
 
 /** 创建 axios 实例 */
 const apiClient: AxiosInstance = axios.create({
@@ -18,12 +43,19 @@ const apiClient: AxiosInstance = axios.create({
 
 /** 请求拦截器 */
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
     // 从 localStorage 获取 token 并添加到请求头
     const token = localStorage.getItem('ipd_access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Electron 客户端模式：将相对 API 路径指向远程服务器
+    const serverUrl = await getElectronServerUrl();
+    if (serverUrl && config.url?.startsWith('/')) {
+      config.url = serverUrl + config.url;
+    }
+
     return config;
   },
   (error) => {

@@ -1,7 +1,7 @@
 {
   "name": "bla-judge-client",
   "version": "1.0.0",
-  "description": "BLA 评委端桌面客户端",
+  "description": "BLA 桌面客户端",
   "main": "dist/main.js",
   "author": "BLA Team",
   "license": "UNLICENSED",
@@ -14,7 +14,7 @@
   },
   "build": {
     "appId": "com.bla.judge-client",
-    "productName": "BLA 评委端",
+    "productName": "BLA",
     "directories": {
       "output": "dist-electron"
     },
@@ -25,6 +25,10 @@
       {
         "from": "app-config.json",
         "to": "app-config.json"
+      },
+      {
+        "from": "../frontend/dist",
+        "to": "frontend/dist"
       }
     ],
     "win": {
@@ -37,7 +41,7 @@
         }
       ],
       "icon": null,
-      "artifactName": "BLA评委端-Setup-${version}.${ext}"
+      "artifactName": "BLA-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -46,7 +50,7 @@
       "deleteAppDataOnUninstall": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "BLA 评委端",
+      "shortcutName": "BLA",
       "installerIcon": null,
       "uninstallerIcon": null,
       "installerHeader": null

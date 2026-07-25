@@ -2,6 +2,60 @@
 
 ##### year_2026
 #### month_7
+### day_25
+
+---
+
+## [2026-07-25 13:00] 修复 Electron 客户端闪退问题（"没法显示"）
+- **需求**: 安装 BLA 客户端后点击快捷方式无反应/闪退，重新安装提示"关闭不了"
+- **提示词**: 现在是这个情况，我下载这个东西的期间会有卡顿，然后呢，下载完以后点击快捷方式会发现没有任何弹窗，弹出来就相当于是闪退或者是这个脚本根本没有启动
+- **改动文件**:
+  - `electron/main.ts`
+  - `electron/package.json`
+  - `frontend/src/shared/api-client.ts`
+- **改动说明**:
+  - 根因：服务器 `http://121.199.31.157:8000` 没有部署前端静态文件，`_mount_frontend_static()` 静默跳过
+  - 直接原因：Electron 客户端模式用 `loadURL(SERVER_URL)` 加载地址 → 得到 JSON 404 → 窗口空白/闪退
+  - 修复 1：客户端模式改为加载本地打包的前端文件（`loadFile(process.resourcesPath + /frontend/dist/index.html)`）
+  - 修复 2：CSP 策略修复——原代码 push 了第二个 `connect-src` 导致策略无效，改为合并到一个 directive
+  - 修复 3：前端 API 客户端动态获取 Electron 提供的服务器 URL（通过 `window.electronAPI.getServerUrl()` 异步获取）
+  - 修复 4：`electron/package.json` 新增 extraResources 条目将 `frontend/dist` 打包进安装包
+
+---
+
+## 对应主函数/前端/后端位置
+- [Click here to open electron/main.ts](C:/Users/32277/Desktop/Business logic agents/electron/main.ts)
+  - 156-210（loadFrontend — 改为加载本地文件）
+  - 268-300（setupCSP — 合并 connect-src）
+- [Click here to open electron/package.json](C:/Users/32277/Desktop/Business logic agents/electron/package.json)
+  - 26-31（extraResources — 新增 frontend/dist）
+- [Click here to open frontend/src/shared/api-client.ts](C:/Users/32277/Desktop/Business logic agents/frontend/src/shared/api-client.ts)
+  - 16-36（getElectronServerUrl — 动态获取服务器地址）
+  - 49-61（请求拦截器 — 异步解析服务器 URL）
+
+## 对应 basic_code_information_archive 位置
+- [Click here to open basic_code_information_archive/electron/](C:/Users/32277/Desktop/Business logic agents/basic_code_information_archive/electron/)
+  - 已更新
+
+---
+
+## [2026-07-25 13:16] 修复 HTML 硬编码 CSP 导致 API 请求被拦截
+- **需求**: 应用启动后 API 请求全被 CSP 拦截
+- **改动文件**: `frontend/index.html`
+- **改动说明**: 
+  - 根因：`frontend/index.html` 第 6 行有 `<meta http-equiv="Content-Security-Policy">` 硬编码了 `connect-src 'self' http://localhost:* ws://localhost:*`，没有包含云服务器地址
+  - 根据 CSP 规范，HTTP 头 + meta 标签两个策略的**交集**生效 → Electron 头允许了服务器地址，但 meta 标签没允许 → API 被拦截
+  - 修复：移除该 `<meta>` 标签，由 Electron 的 `setupCSP()` 统一管理安全策略
+  - 浏览器 dev 模式由 Vite 处理，不受影响
+
+---
+
+## 对应主函数/前端位置
+- [Click here to open frontend/index.html](C:/Users/32277/Desktop/Business logic agents/frontend/index.html)
+  - 第 6 行（原 CSP meta 标签已删除）
+
+---
+
 ### day_24
 
 ---

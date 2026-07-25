@@ -55,6 +55,11 @@ electron/dist-electron/
 # Tunnel tools
 .tools/
 
+# Windows reserved names
+nul
+NUL
+Nul
+
 # Temp files
 *.bom
 

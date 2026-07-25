@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+  base: './', // 使用相对路径，支持 Electron file:// 协议加载
   plugins: [react()],
   resolve: {
     alias: {

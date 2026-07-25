@@ -2,6 +2,31 @@
 
 ##### year_2026
 #### month_7
+### day_25
+
+---
+
+## [2026-07-25 13:00] 前端 API 客户端支持 Electron 动态服务器 URL
+- **改动文件**: `frontend/src/shared/api-client.ts`
+- **改动说明**: 
+  - 新增 `getElectronServerUrl()` 函数，在 Electron 客户端模式下通过 IPC 获取服务器地址
+  - 请求拦截器改为异步，首次请求时从 `window.electronAPI.getServerUrl()` 获取远程服务器 URL
+  - 缓存服务器地址避免重复 IPC 调用
+  - 浏览器模式（非 Electron）行为不变，使用 `API_BASE_URL` 环境变量
+
+---
+
+---
+
+## [2026-07-25 13:16] 移除 HTML 硬编码 CSP meta 标签
+- **改动文件**: `frontend/index.html`
+- **改动说明**: 
+  - 移除 `<meta http-equiv="Content-Security-Policy">` 标签
+  - 原因：硬编码的 connect-src 未包含云服务器地址，导致 API 请求被浏览器 CSP 拦截
+  - 安全策略改由 Electron 主进程的 setupCSP() 统一管理
+
+---
+
 ### day_24
 
 ---

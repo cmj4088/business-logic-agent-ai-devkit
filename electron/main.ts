@@ -42,6 +42,9 @@ const MIN_HEIGHT = 768;
 /** 是否是开发环境 */
 const isDev = !app.isPackaged;
 
+/** 调试模式——通过环境变量 BLA_DEBUG=1 启用 DevTools */
+const isDebug = process.env.BLA_DEBUG === '1';
+
 // ===== 服务器配置（客户端模式）=====
 
 /**
@@ -214,7 +217,7 @@ function createMainWindow(): BrowserWindow {
     height: defaultHeight,
     minWidth: MIN_WIDTH,
     minHeight: MIN_HEIGHT,
-    title: IS_CLIENT_MODE ? 'BLA 评委端' : 'IPDagents',
+    title: IS_CLIENT_MODE ? 'BLA' : 'IPDagents',
     show: false,
     backgroundColor: '#1a1a2e',
     icon: getIconPath(),
@@ -227,11 +230,11 @@ function createMainWindow(): BrowserWindow {
       webviewTag: false,
       preload: path.join(__dirname, 'preload.js'),
       spellcheck: false,
-      devTools: isDev,
+      devTools: isDev || isDebug,
     },
   });
 
-  if (!isDev) {
+  if (!isDev && !isDebug) {
     win.webContents.on('devtools-opened', () => {
       win.webContents.closeDevTools();
     });
@@ -239,7 +242,7 @@ function createMainWindow(): BrowserWindow {
 
   win.on('ready-to-show', () => {
     win.show();
-    if (isDev) {
+    if (isDev || isDebug) {
       win.webContents.openDevTools({ mode: 'detach' });
     }
   });
@@ -267,26 +270,28 @@ function createMainWindow(): BrowserWindow {
  */
 function setupCSP(): void {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    // 构建 connect-src（动态加入客户端模式的服务器地址）
+    const connectSrc = ["'self'", 'http://localhost:*', 'ws://localhost:*'];
+    if (IS_CLIENT_MODE && SERVER_URL) {
+      try {
+        const u = new URL(SERVER_URL);
+        connectSrc.push(u.origin);
+        connectSrc.push('ws://' + u.hostname + ':*');
+      } catch (_e) {
+        // URL 解析失败，跳过
+      }
+    }
+
     const csp = [
       "default-src 'self'",
       "script-src 'self'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' http://localhost:* ws://localhost:*",
+      'connect-src ' + connectSrc.join(' '),
       "frame-src 'self'",
       "media-src 'self'",
     ];
-
-    // 客户端模式下额外允许连接远程服务器
-    if (IS_CLIENT_MODE && SERVER_URL) {
-      try {
-        const u = new URL(SERVER_URL);
-        csp.push("connect-src 'self' " + u.origin + ' ws://' + u.hostname + ':*');
-      } catch (_e) {
-        // URL 解析失败，跳过
-      }
-    }
 
     callback({
       responseHeaders: {
@@ -302,7 +307,7 @@ function setupCSP(): void {
 // ===== 应用菜单 =====
 
 function setupMenu(): void {
-  const appLabel = IS_CLIENT_MODE ? 'BLA 评委端' : 'IPDagents';
+  const appLabel = IS_CLIENT_MODE ? 'BLA' : 'IPDagents';
   const template: Electron.MenuItemConstructorOptions[] = [
     {
       label: appLabel,
@@ -366,24 +371,25 @@ function loadFrontend(): void {
     return;
   }
 
-  if (IS_CLIENT_MODE) {
-    // 客户端模式：加载远程服务器 URL
-    const targetUrl = isDev ? DEV_FRONTEND_URL : SERVER_URL;
-    mainWindow.loadURL(targetUrl).catch((err) => {
-      console.error('[Main] 连接服务器失败 (', targetUrl, '):', err.message);
-      showErrorPage(
-        '无法连接到 BLA 服务器：' + targetUrl + '\n请确认服务器已启动，网络连接正常。',
-        true,
-      );
-    });
-  } else if (isDev) {
+  if (isDev) {
+    // 开发环境：加载 Vite 开发服务器
     mainWindow.loadURL(DEV_FRONTEND_URL).catch((err) => {
       console.error('[Main] 加载前端失败 (', DEV_FRONTEND_URL, '):', err.message);
       showErrorPage('无法连接到开发服务器 ' + DEV_FRONTEND_URL);
     });
+  } else if (IS_CLIENT_MODE) {
+    // 客户端模式生产环境：加载本地打包的前端文件，API 请求自动发到远程服务器
+    const indexPath = path.join(process.resourcesPath, 'frontend', 'dist', 'index.html');
+    mainWindow.loadFile(indexPath).catch((err) => {
+      console.error('[Main] 加载前端文件失败 (', indexPath, '):', err.message);
+      showErrorPage(
+        '加载前端页面失败。\n请确认应用安装完整，或联系主办方。',
+        true,
+      );
+    });
   } else {
     // 正常模式生产环境：加载打包后的前端文件
-    const indexPath = path.join(__dirname, '..', 'frontend', 'dist', 'index.html');
+    const indexPath = path.join(process.resourcesPath, 'frontend', 'dist', 'index.html');
     mainWindow.loadFile(indexPath).catch((err) => {
       console.error('[Main] 加载前端文件失败 (', indexPath, '):', err.message);
       showErrorPage('加载前端页面失败，请重新安装应用。');
@@ -438,7 +444,7 @@ function setupPythonBridgeListeners(bridge: PythonBridge): void {
 function showErrorPage(message: string, showActions: boolean = false): void {
   if (!mainWindow || mainWindow.isDestroyed()) return;
 
-  const title = IS_CLIENT_MODE ? 'BLA 评委端' : 'IPDagents';
+  const title = IS_CLIENT_MODE ? 'BLA' : 'IPDagents';
 
   const actionsHtml = showActions
     ? `
@@ -487,7 +493,7 @@ function showSetupPage(): void {
 
   const html = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
     + '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
-    + '<title>BLA Judge Client - Setup</title>'
+    + '<title>BLA - Setup</title>'
     + '<style>'
     + '*{margin:0;padding:0;box-sizing:border-box}'
     + 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;'
@@ -509,7 +515,7 @@ function showSetupPage(): void {
     + '.loading{color:#ffd700}.success{color:#64ffda}.error{color:#ff6b6b}'
     + '</style></head><body>'
     + '<div class="container">'
-    + '<h1>BLA Judge Client</h1>'
+    + '<h1>BLA</h1>'
     + '<p class="sub">Enter the server address provided by the presenter</p>'
     + '<label for="serverUrl">Server Address</label>'
     + '<input type="text" id="serverUrl" placeholder="e.g. http://192.168.1.100:8000 or https://xxx.trycloudflare.com"'

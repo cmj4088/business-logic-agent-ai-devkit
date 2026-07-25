@@ -31,11 +31,23 @@
 | 特性 | 正常模式 | 客户端模式 |
 |------|---------|-----------|
 | Python 后端 | 启动本地后端 | 不启动 |
-| 前端来源 | 本地 dist 文件 | 远程服务器 URL |
+| 前端来源 | 本地 dist 文件 | 本地 dist 文件（通过 extraResources 打包） |
+| API 请求 | 同源 | 发到远程服务器（通过 IPC 获取服务器 URL） |
 | 适用场景 | 开发/自用 | 比赛评委使用 |
 | 配置方式 | 无需配置 | app-config.json |
+
+## 关键修复（2026-07-25）
+### 1. CSP 策略修复
+- **问题**: 原代码在客户端模式下 push 了第二个 `connect-src` directive，导致 CSP 策略无效（同一 policy 中出现重复 directive 名称）
+- **修复**: 改为构建一个 `connectSrc` 数组，合并本地和远程地址后生成唯一的 `connect-src` directive
+
+### 2. loadFrontend 修复
+- **问题**: 客户端模式用 `loadURL(SERVER_URL)` 加载远程地址，但服务器没有前端静态文件（仅 API），返回 JSON 404 → 窗口空白
+- **修复**: 客户端模式生产环境改为 `loadFile(process.resourcesPath + '/frontend/dist/index.html')`，前端文件打包在安装包内
+- **原理**: Electron 加载本地 HTML 文件，React 启动后通过 IPC 获取服务器 URL，API 请求指向远程服务器
 
 ## 注意事项
 - 安全配置必须严格遵守
 - 生产环境下所有 DevTools 入口被禁用
 - 客户端模式下 Electron 仅为"浏览器壳"，所有业务逻辑在远程服务器上
+- 前端静态文件通过 electron-builder 的 `extraResources` 打包进安装包（`electron/package.json → extraResources`）

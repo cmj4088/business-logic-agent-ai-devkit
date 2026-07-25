@@ -2,6 +2,44 @@
 
 ##### year_2026
 #### month_7
+### day_25
+
+---
+
+## [2026-07-25 20:57] 生成完整项目介绍 DOCX 文档
+- **需求**: 制作一份整个项目的详细介绍 DOCX
+- **提示词**: "给我做一个整个项目的详细介绍的docx"
+- **改动文件**: docx/Business_Logic_Agent_项目详细介绍.docx（新建）
+- **改动说明**: 基于全部设计文档（project_design.md / architecture-v5.md / mvp-guide-v2.md / api-design.md / database-schema-v3.md / security-architecture-v2.md / agent-system-prompts.md / ipd-workflow-template.md）和项目代码生成综合介绍文档。含 11 章 + 附录，278 段落、22 张表格，涵盖项目概述、技术架构、后端 M0-M10、前端 M11-M18、IPD 工作流设计、数据库设计、API 设计、安全架构、测试与质量、部署方式、开发计划与里程碑
+
+---
+
+## 对应 docx 文档的位置
+- [Click here to open 项目详细介绍 DOCX](C:/Users/32277/Desktop/Business logic agents/docx/Business_Logic_Agent_项目详细介绍.docx)
+    - 封面：项目名称 / 版本 / 日期 / 技术栈
+    - 目录：11 章 + 附录
+    - 一、项目概述（定位 / 核心价值 / 用户画像 / 项目历程）
+    - 二、技术架构（总体架构 / 技术栈 / Electron 架构）
+    - 三、后端模块详解（M0-M10 共 11 个模块）
+    - 四、前端模块详解（M11-M18 共 8 个模块）
+    - 五、IPD 工作流设计（6 阶段 / 门禁 / Agent 角色 / 编排模式）
+    - 六、数据库设计（22 张表 / 加密策略）
+    - 七、API 设计（124 REST + 5 WS + 1 SSE）
+    - 八、安全架构（Prompt Injection / Electron 安全 / 合规）
+    - 九、测试与质量（394 测试通过 / MVP 指标 / 代码规范）
+    - 十、部署方式（Electron / Docker / 云部署）
+    - 十一、开发计划与里程碑（P0 范围 / 未来 P1-P3）
+    - 附录（参考文档 / 术语表 / Skills / 命令速查）
+
+---
+
+## 对应在 basic_code_information_archive 的文档位置
+- 本次为 docx 文档生成，非代码修改，basic_code_information_archive 暂不收录
+
+---
+
+##### year_2026
+#### month_7
 ### day_10
 
 ---
