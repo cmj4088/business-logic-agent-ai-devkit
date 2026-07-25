@@ -2,15 +2,15 @@
 
 > 此仓库包含 Business Logic Agent 项目的完整 AI 辅助开发工具包。
 > 所有 AI 提示文件、开发规则、修改记录和任务分工说明均在此处。
-> 配合 Claude Code / Cursor / Windsurf 等 AI 编程助手使用。
+> 配合 Trae / Cursor / Windsurf 等 AI 编程助手使用。
 
 ## 包结构说明
 
 | 目录/文件 | 用途 | 使用方式 |
 |-----------|------|----------|
 | `CLAUDE.md` | 项目级 AI 指令 | 放在项目根目录，AI 自动读取 |
-| `.claude/` | Claude Code 配置与 Skills | 自动加载 |
-| `.trae/` | Trae IDE 配置 | 自动加载 |
+| `.trae/` | Trae IDE 配置与 Skills | 自动加载 |
+| `.claude/` | AI 辅助配置 | 自动加载 |
 | `personal-rules.md` | 个人编码规范 | 手动引入 AI 上下文 |
 | `modification_log/` | 完整修改记录（含用户需求与提示词） | 回溯决策 / 分析历史 |
 | `MVPtext/` | 子 Agent 任务分工说明 | 分配模块给子 Agent 时使用 |
@@ -29,7 +29,7 @@
 - **代码编写规则**：Python 类型注解、TypeScript strict、API 统一响应格式
 - **安全规范**：API Key 加密、敏感数据过滤、日志脱敏
 
-将此文件放在任何 Claude Code 项目的根目录，AI 会自动遵循这些规则。
+将此文件放在任何 Trae 项目的根目录，AI 会自动遵循这些规则。
 
 ## 目录详细说明
 

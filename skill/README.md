@@ -15,7 +15,7 @@
 
 ## 安装社区插件
 
-在 Claude Code 中依次执行：
+在 Trae 中依次执行：
 ```
 /plugin install senior-frontend
 /plugin install backend-architect
